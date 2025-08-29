@@ -1,0 +1,92 @@
+08.29 23:42
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>QR Scanner Data Entry</title>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    input, button { margin: 5px; padding: 8px; width: 300px; }
+    table { border-collapse: collapse; margin-top: 20px; width: 100%; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    #qr-reader { width: 300px; margin-bottom: 20px; }
+  </style>
+</head>
+<body>
+
+  <h2> QR Scanner Data Entry</h2>
+
+  <div id="qr-reader"></div>
+  <div id="qr-result" style="margin-bottom: 10px; font-weight: bold;"></div>
+
+  <label>Name:</label><br>
+  <input type="text" id="name"><br>
+
+  <label>UIDAI:</label><br>
+  <input type="text" id="uidai"><br>
+
+  <label>Phone:</label><br>
+  <input type="text" id="phone"><br>
+
+  <button onclick="addEntry()">Add Entry</button>
+  <button onclick="exportToExcel()">Export to Excel</button>
+
+  <table id="dataTable">
+    <thead>
+      <tr><th>Name</th><th>UIDAI</th><th>Phone</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    function onScanSuccess(decodedText) {
+      document.getElementById("qr-result").innerText = `Scanned: ${decodedText}`;
+      try {
+        const data = JSON.parse(decodedText);
+        document.getElementById('name').value = data.name || '';
+        document.getElementById('uidai').value = data.uidai || '';
+        document.getElementById('phone').value = data.phone || '';
+      } catch (e) {
+        alert("Invalid QR format. Expected JSON with name, uidai, phone.");
+      }
+    }
+
+    function startQRScanner() {
+      const qrScanner = new Html5Qrcode("qr-reader");
+      qrScanner.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: 250 },
+        onScanSuccess
+      ).catch(err => {
+        document.getElementById("qr-result").innerText = "Camera access failed.";
+        console.error("QR Scanner error:", err);
+      });
+    }
+
+    function addEntry() {
+      const name = document.getElementById('name').value;
+      const uidai = document.getElementById('uidai').value;
+      const phone = document.getElementById('phone').value;
+      const table = document.getElementById('dataTable').getElementsByTagName('tbody')[0];
+      const row = table.insertRow();
+      row.insertCell(0).innerText = name;
+      row.insertCell(1).innerText = uidai;
+      row.insertCell(2).innerText = phone;
+      document.getElementById('name').value = '';
+      document.getElementById('uidai').value = '';
+      document.getElementById('phone').value = '';
+    }
+
+    function exportToExcel() {
+      const table = document.getElementById('dataTable');
+      const wb = XLSX.utils.table_to_book(table, { sheet: "Sheet1" });
+      XLSX.writeFile(wb, "DataEntry.xlsx");
+    }
+
+    window.onload = startQRScanner;
+  </script>
+
+</body>
+</html>
